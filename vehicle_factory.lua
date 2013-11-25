@@ -89,8 +89,6 @@ function newVehicle(customer, gameDate)
 		end
 	end
 	
-	problemFactory.addProblems(o, gameDate)
-	
 	return o
 end
 

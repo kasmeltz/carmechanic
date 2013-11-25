@@ -176,8 +176,9 @@ function newCustomer(gameDate)
 	s2l = s2l + ageRange.stats[3]
 	s2h = s2h + ageRange.stats[4]
 	
-	o.age = math.random(ageRange.range[1], ageRange.range[2])		
-	o.ageRange = ageRange	
+	local age = math.random(ageRange.range[1], ageRange.range[2])		
+	
+	o.birthYear = gameDate.year - age
 	
 	-- stats
 	s1l = math.max(s1l, 0)
@@ -192,9 +193,7 @@ function newCustomer(gameDate)
 	o.realStats =
 	{
 		s1, s2
-	}
-	
-	o.vehicle = vehicleFactory.newVehicle(o, gameDate)
+	}	
 	
 	return o
 end

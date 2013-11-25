@@ -104,3 +104,7 @@ During the day as you interact with customers this schedule may be altered
 The system will track all of the past customer visits grouped by customer. This could be used to show various reports (the sky is the limit here!) 
 Players could track how much money they have made from different ages, sexes, ethnicities.
 Players could track how honest / dishnoest they have been with different ages, sexes and ethnicities.	
+
+After doing work, the garage needs to be cleaned. 
+A customers internal willingness to come back as a repeat customer will be influenced by how clean the garage is when they arrive.
+
