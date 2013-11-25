@@ -1,98 +1,83 @@
+local vehicleFactory = require('vehicle_factory')
+
 module('customerFactory', package.seeall)
 
-function _M:new()
-	local o = {}
-	
-	self.__index = self
-	
-	return setmetatable(o, self)
-end
+local sexes = {}
+local ageRanges = {}
+local ethnicities = {}
+local maleFirstNames = {}
+local femaleFirstNames = {}
+local lastNames = {}
 
-function blankTable(t)
-	for k in pairs (t) do
-		t [k] = nil
-	end
-end
-
-function _M:initialize()
+function initialize()
 	local data = {}
 
-	blankTable(data)	
-	self._sexes = {}
+	table.erase(data)	
 	for line in love.filesystem.lines('data/sexes.dat') do
 		table.insert(data, line)
-	
-		if #data == 5 then
+
+		if #data == 2 then
 			local o = {}			
 			o.name = data[1]		
-			o.stats = { tonumber(data[2]), tonumber(data[3]), tonumber(data[4]), tonumber(data[5]) }
-			table.insert(self._sexes, o)
-			blankTable(data)
+			o.stats = table.tonumber(string.split(data[2], ','))
+			
+			table.insert(sexes, o)
+			table.erase(data)	
 		end
 	end	
 	
-	blankTable(data)	
-	self._ageRanges = {}
+	table.erase(data)	
 	for line in love.filesystem.lines('data/age_range.dat') do
 		table.insert(data, line)
 	
-		if #data == 7 then
+		if #data == 3 then
 			local o = {}			
-			o.range = { tonumber(data[1]), tonumber(data[2]) }
-			o.frequency = tonumber(data[3])			
-			o.stats = { tonumber(data[4]), tonumber(data[5]), tonumber(data[6]), tonumber(data[7]) }
-			table.insert(self._ageRanges, o)
-			blankTable(data)
+			o.range = table.tonumber(string.split(data[1], ','))
+			o.frequency = tonumber(data[2])			
+			o.stats = table.tonumber(string.split(data[3], ','))
+			table.insert(ageRanges, o)
+			table.erase(data)	
 		end
 	end	
 	
-	blankTable(data)	
-	self._vehicleAges = {}
-	for line in love.filesystem.lines('data/vehicle_ages.dat') do
+	table.erase(data)	
+	for line in love.filesystem.lines('data/ethnicities.dat') do
 		table.insert(data, line)
 	
 		if #data == 3 then
 			local o = {}			
-			o.range = { tonumber(data[1]), tonumber(data[2]) }
-			o.frequency = tonumber(data[3])			
-			table.insert(self._vehicleAges, o)
-			blankTable(data)
+			o.name = data[1]
+			o.frequency = tonumber(data[2])			
+			o.stats = table.tonumber(string.split(data[3], ','))
+			table.insert(ethnicities, o)
+			table.erase(data)	
 		end
-	end	
+	end		
 	
-	self._maleFirstNames = {}
 	for line in love.filesystem.lines('data/first_names_m.dat') do
-		table.insert(self._maleFirstNames, line)
+		table.insert(maleFirstNames, line)
 	end	
 
-	self._femaleFirstNames = {}
 	for line in love.filesystem.lines('data/first_names_f.dat') do
-		table.insert(self._femaleFirstNames, line)
+		table.insert(femaleFirstNames, line)
 	end	
 	
-	self._lastNames = {}
-	for line in love.filesystem.lines('data/last_names.dat') do
-		table.insert(self._lastNames, line)
+	for _, e in pairs(ethnicities) do
+		lastNames[e.name] = {}
 	end
-		
-	blankTable(data)
-	self._vehicleTypes = {}	
-	for line in love.filesystem.lines('data/vehicles.dat') do
-		table.insert(data, line)
-		
-		if #data == 3 then
-			local o = {}			
-			o.name = data[1]		
-			o.firstYear = tonumber(data[2])
-			o.frequency = tonumber(data[3])			
-			table.insert(self._vehicleTypes, o)
-			blankTable(data)
+	
+	local lastNameTable = nil
+	for line in love.filesystem.lines('data/last_names.dat') do
+		if line:sub(1,2) == '**' then
+			local e = line:sub(4)
+			lastNameTable = lastNames[e]
+		else
+			table.insert(lastNameTable, line)
 		end
 	end
 end
 
-
-function _M:newCustomer(gameDate)
+function newCustomer(gameDate)
 	local value	
 	local o = {}
 
@@ -104,33 +89,72 @@ function _M:newCustomer(gameDate)
 	local s3l = 0
 	local s3h = 0
 	
+	o.yearCreated = gameDate.year
+	
 	o.readStats = {}
-
-	-- last name
-	value = math.random(1, #self._lastNames)
-	o.lastName = self._lastNames[value]
 	
 	-- sex 
-	value = math.random(1, #self._sexes)
-	o.sex = self._sexes[value]
+	value = math.random(1, #sexes)
+	o.sex = sexes[value]
 
 	s1l = o.sex.stats[1]
 	s1h = o.sex.stats[2]
 	s2l = o.sex.stats[3]
 	s2h = o.sex.stats[4]
-	
+
 	-- first name
 	if o.sex.name == 'Male' then
-		value = math.random(1, #self._maleFirstNames)
-		o.firstName = self._maleFirstNames[value]
+		value = math.random(1, #maleFirstNames)
+		o.firstName = maleFirstNames[value]
 	else
-		value = math.random(1, #self._femaleFirstNames)
-		o.firstName = self._femaleFirstNames[value]
+		value = math.random(1, #femaleFirstNames)
+		o.firstName = femaleFirstNames[value]
 	end
+	
+	-- ethnicity
+	fr = 0
+	for _, et in ipairs(ethnicities) do
+		fr = fr + et.frequency
+	end		
+	
+	value = math.random(1, fr)	
+	
+	local ethnicity = nil
+	
+	fr = 0	
+	for _, et in ipairs(ethnicities) do
+		fr = fr + et.frequency
+		if value <= fr then
+			ethnicity = et
+			break
+		end
+	end
+	
+	s1l = s1l + ethnicity.stats[1]
+	s1h = s1h + ethnicity.stats[2]
+	s2l = s2l + ethnicity.stats[3]
+	s2h = s2h + ethnicity.stats[4]
+	
+	o.ethnicity = ethnicity	
+
+	-- last name
+	value = math.random(1, #lastNames[ethnicity.name])
+	o.lastName = lastNames[ethnicity.name][value]
+		
+	-- face
+	o.face = { }
+	
+	o.face.shape = math.random(1, 6)
+	o.face.eyes = math.random(1, 6)
+	o.face.ears = math.random(1, 6)
+	o.face.nose = math.random(1, 6)
+	o.face.mouth = math.random(1, 6)
+	o.face.hair = math.random(1, 6)
+	o.face.facialhair = math.random(1, 6)
 	
 	-- age
 	fr = 0
-	for _, ar in ipairs(self._ageRanges) do
+	for _, ar in ipairs(ageRanges) do
 		fr = fr + ar.frequency
 	end		
 	
@@ -139,7 +163,7 @@ function _M:newCustomer(gameDate)
 	local ageRange = nil
 	
 	fr = 0	
-	for _, ar in ipairs(self._ageRanges) do
+	for _, ar in ipairs(ageRanges) do
 		fr = fr + ar.frequency
 		if value <= fr then
 			ageRange = ar
@@ -170,51 +194,7 @@ function _M:newCustomer(gameDate)
 		s1, s2
 	}
 	
-	-- vehicle
-	o.vehicle = {}
-	
-	-- vehicle age
-	fr = 0
-	for _, va in ipairs(self._vehicleAges) do
-		fr = fr + va.frequency
-	end		
-	
-	value = math.random(1, fr)	
-	
-	local vehicleAge = nil
-	
-	fr = 0	
-	for _, va in ipairs(self._vehicleAges) do
-		fr = fr + va.frequency
-		if value <= fr then
-			vehicleAge = va
-			break
-		end
-	end
-	
-	value = math.random(vehicleAge.range[1], vehicleAge.range[2])
-	o.vehicle.year = gameDate.year - value	
-	
-	-- vehicle type
-	fr = 0
-	local possibleTypes = {}
-	for _, vt in ipairs(self._vehicleTypes) do
-		if vt.firstYear <= o.vehicle.year then
-			table.insert(possibleTypes, vt)
-			fr = fr + vt.frequency
-		end		
-	end
-		
-	value = math.random(1, fr)
-	
-	fr = 0	
-	for _, vt in ipairs(possibleTypes) do
-		fr = fr + vt.frequency
-		if value <= fr then
-			o.vehicle.type = vt.name
-			break
-		end
-	end
+	o.vehicle = vehicleFactory.newVehicle(o, gameDate)
 	
 	return o
 end

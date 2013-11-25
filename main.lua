@@ -1,10 +1,18 @@
+require 'table_ext'
+require 'string_ext'
+
 local customerFactory = require 'customer_factory'
+local vehicleFactory = require 'vehicle_factory'
+local problemFactory = require 'problem_factory'
 
 -------------------------------------------------------------------------------
 -- customers
-local cf 
 local KNOWLEDGE_STAT = 1
 local GULLIBLE_STAT = 2
+
+local pastCustomers = {}
+local currentCustomers = {}
+local scheduledCustomers = {}
 
 -------------------------------------------------------------------------------
 -- skillls
@@ -76,8 +84,8 @@ local timeRates =
 	{ name = 'slow', timeFactor = 0.5 },
 	{ name = 'regular', timeFactor = 1 },
 	{ name = 'fast', timeFactor = 10 },
-	{ name = 'faster', timeFactor = 100 },
-	{ name = 'fastest', timeFactor = 1000 }
+	{ name = 'faster', timeFactor = 1000 },
+	{ name = 'fastest', timeFactor = 10000 }
 }
 
 local holidays = 
@@ -100,14 +108,19 @@ function love.load()
 	gameSeconds = os.time { year = 2013, month = 1, day = 2 }	
 	oldGameDate = os.date('*t', gameSeconds)	
 
-	cf = customerFactory:new()
-	cf:initialize()
+	customerFactory.initialize()
+	vehicleFactory.initialize()
+	problemFactory.initialize()
 end
 
 function love.update(dt)
 	gameSeconds = gameSeconds + dt * timeRates[currentTimeRate].timeFactor
 	
 	gameDate = os.date('*t', gameSeconds)		
+	
+	-- the day has advanced
+	if(oldGameDate.day ~= gameDate.day) then
+	end
 	
 	-- the month has advanced
 	if(oldGameDate.month ~= gameDate.month) then
@@ -127,9 +140,14 @@ function love.draw()
 	
 	if currentCustomer then
 		love.graphics.print(currentCustomer.firstName .. ' ' .. currentCustomer.lastName, 0, 150)
-		love.graphics.print(currentCustomer.ageRange.range[1] .. ' - ' .. currentCustomer.ageRange.range[2] .. ' ( ' .. currentCustomer.age .. ' )', 300, 150)
-		love.graphics.print(currentCustomer.vehicle.year .. ' ' .. currentCustomer.vehicle.type, 0, 175)
+		love.graphics.print(currentCustomer.ageRange.range[1] .. ' - ' .. currentCustomer.ageRange.range[2] .. ' ( ' .. currentCustomer.age .. ' )', 0, 175)
+		love.graphics.print(currentCustomer.ethnicity.name, 0, 200)
 		
+		local sx = 0
+		for k, v in pairs(currentCustomer.face) do
+			love.graphics.print(k .. ': ' .. v, sx, 225)
+			sx = sx + 125
+		end
 		
 		love.graphics.print('Knowledge: ' .. 
 			currentCustomer.readStats[KNOWLEDGE_STAT], 0, 250)
@@ -150,6 +168,18 @@ function love.draw()
 		
 		love.graphics.print('Gullability: ' .. 
 			currentCustomer.realStats[GULLIBLE_STAT], 0, 425)
+			
+		love.graphics.print(currentCustomer.vehicle.year .. ' ' .. 
+			currentCustomer.vehicle.type .. ' ' .. 
+			currentCustomer.vehicle.kms .. ' kms', 0, 500)	
+
+		local sy = 520
+		for _, v in ipairs(currentCustomer.vehicle.problems) do
+			love.graphics.print(v.name, 0,sy)	
+			sy = sy + 20
+		end
+		
+	
 	end
 end
 
@@ -167,7 +197,7 @@ function love.keyreleased(key)
 	end	
 	
 	if key == 'a' then
-		currentCustomer = cf:newCustomer(gameDate)
+		currentCustomer = customerFactory.newCustomer(gameDate)
 		readPerson(currentCustomer)
 	end
 end

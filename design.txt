@@ -94,3 +94,13 @@ Customers will have sex, age range, ethnicity.
 When graphics are added, will have some number of faces for each sex, ethniicty and age range
 
 It will be very cool if a customer comes back for 30 years and you see their face change!!
+
+Every day the system will create a new list of customers that will arrive at your shop. The number and frequency of customers will be based on your reputation.
+During the day as you interact with customers this schedule may be altered
+	If you're full you might ask a customer to come back at a later time. If they say yes the customer will be put back into the schedule at the later time. The longer you ask the customer to wait the more likely
+	they are to say no.
+	After you are finished with a customer, the system decides if that customer will come back for another visit. If yes, the customer will be added to the schedule at some later date.
+	
+The system will track all of the past customer visits grouped by customer. This could be used to show various reports (the sky is the limit here!) 
+Players could track how much money they have made from different ages, sexes, ethnicities.
+Players could track how honest / dishnoest they have been with different ages, sexes and ethnicities.	
