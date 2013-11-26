@@ -87,7 +87,6 @@ function _M:draw()
 	local sx = self.pos[1]
 	local sy = self.pos[2]
 	for k, v in pairs(self.images) do
-		print(k)
 		local offset = imagePositions[k]
 		love.graphics.draw(v, sx + offset[1], sy + offset[2])
 	end
