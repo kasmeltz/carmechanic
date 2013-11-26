@@ -15,9 +15,45 @@ function _M:new(garage)
 	return setmetatable(o, self)
 end
 
+-------------------------------------------------------------------------------
+-- private functions
+
+-- creates a new appointment with some random
+-- date in the future
+local function randomDateInFuture(gt)
+	local aptTime = gameTime:new()			
+
+	-- to do generate a future date based on some formula
+	local oneDay = 60 * 60 * 24	
+	aptTime:setSeconds(gt.seconds + oneDay)
+	
+	return aptTime
+end
+
+-- generates a new customer
+local function generateNewCustomer(gt)
+	local customer = customerFactory.newCustomer(gt)
+	customer.vehicle = vehicleFactory.newVehicle(customer, gt)
+	problemFactory.addProblems(customer.vehicle, gt)
+	
+	return customer
+end
+
+-------------------------------------------------------------------------------
+-- public functions
+
+-- creates an appointment for the provided customer and time
+function _M:createAppointment(customer, gt)
+	local apt = appointment:new()						
+	apt.time = { gt }
+	customer.appointment = apt			
+	apt.customer = customer		
+	self.schedule[apt] = apt
+end
+
 -- returns the schedule of visits for that day
 -- in time order
-function _M:getNextDay(gt)		
+function _M:getNextDay(gt)			
 	-- clean out any old appointemnts
 	for k, apt in pairs(self.schedule) do
 		if  gt.date.year > apt.time[1].date.year or
@@ -76,29 +112,11 @@ function _M:scheduleDaysCustomers(gt)
 		local value = math.random(1, randomRange)
 		
 		if value <= self.garage.reputation then		
-			-- figure out how many customers to schedule for the day 
-			-- based on the garage's reputation				
-			local apt = appointment:new()	
-						
-			-- figure out what time the customers should arrive at
 			local aptTime = gameTime:new()
 			aptTime:setSeconds(os.time(d))
-			apt.time = { aptTime }
-						
-			-- to do
-			-- custmoer factory is now a singleton update this code after merge
-			local customer = customerFactory.newCustomer(gt.date)			
-			customer.vehicle = vehicleFactory.newVehicle(customer, gt.date)				
-			problemFactory.addProblems(customer.vehicle, gt.date)	
-			customer.appointment = apt
 			
-			apt.customer = customer
-			
-			-- to do 
-			-- add a vehicle to the customer
-			-- to do
-			-- add problem(s) to the vehicle								
-			self.schedule[apt] = apt
+			local customer = generateNewCustomer(gt)
+			self:createAppointment(customer, aptTime)
 		end
 		
 		-- to do figure out how this will work!!
@@ -115,6 +133,7 @@ function _M:scheduleDaysCustomers(gt)
 end
 
 -- schedules a customer to come back at a certain time
+-- as part of the same appointment
 function _M:scheduleComeBack(apt, gt)		
 	-- to do
 	-- add or subtract random amount to the time 
@@ -125,9 +144,23 @@ function _M:scheduleComeBack(apt, gt)
 	table.insert(apt.time,  gt)
 end
 
--- resolves an appointment
-function _M:resolveAppointment(apt, gt)
+-- schedules an existing customer at some time in the future
+function _M:addExistingCustomerToScheduleFuture(customer, gt)
+	local aptTime = randomDateInFuture(gt)
 	
+	-- to do decide if customer should die
+	-- to do decide if the customer whould have a new vehicle when they come back
+	-- to do decide if the customers stats should change the next time they come back	
+	
+	problemFactory.addProblems(customer.vehicle, aptTime)	
+	self:createAppointment(customer, aptTime)
+end
+
+-- schedules a new customer some time in the future
+function _M:addNewCustomerToScheduleFuture(gt)
+	local aptTime = randomDateInFuture(gt)
+	local customer = generateNewCustomer(gt)
+	self:createAppointment(customer, aptTime)
 end
 
 return _M

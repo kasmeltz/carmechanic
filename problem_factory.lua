@@ -36,7 +36,9 @@ function initialize()
 	end
 end
 
-function addProblems(vehicle, gameDate)
+function addProblems(vehicle, gt)
+	local gameDate = gt.date
+	
 	local fr
 	
 	local distribution = nil
@@ -68,7 +70,14 @@ function addProblems(vehicle, gameDate)
 	end
 	
 	local usedProblems = {}
-	vehicle.problems = {}
+	
+	if not vehicle.problems then
+		vehicle.problems = {}
+	else
+		for _, pr in pairs(vehicle.problems) do
+			usedProblems[pr] = true
+		end
+	end
 	
 	for i = 1, problemCount do		
 		fr = 0
@@ -80,19 +89,21 @@ function addProblems(vehicle, gameDate)
 			end		
 		end
 			
-		local problem = nil
+		local problem = {}
 		value = math.random(1, fr)
 		
 		fr = 0	
 		for _, pt in ipairs(possibleProblems) do
 			fr = fr + pt.frequency[distributionIndex]
 			if value <= fr then
-				problem = pt
+				problem.realProblem = pt
 				break
 			end
 		end
+		
+		problem.time = gt		
 	
-		usedProblems[problem] = true
+		usedProblems[problem.realProblem] = true
 		table.insert(vehicle.problems, problem)
 	end	
 end

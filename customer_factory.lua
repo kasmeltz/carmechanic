@@ -1,4 +1,4 @@
-local vehicleFactory = require('vehicle_factory')
+local customer = require 'customer'
 
 module('customerFactory', package.seeall)
 
@@ -77,9 +77,11 @@ function initialize()
 	end
 end
 
-function newCustomer(gameDate)
+function newCustomer(gt)
+	local gameDate = gt.date
+	
 	local value	
-	local o = {}
+	local o = customer:new()
 
 	local fr = 0	
 	local s1l = 0
@@ -198,4 +200,14 @@ function newCustomer(gameDate)
 	return o
 end
 
+-- returns the age range for a customer
+function ageRange(c, gt)
+	local age = c:age(gt)
+	for _, ar in ipairs(ageRanges) do
+		if age >= ar.range[1] and age <= ar.range[2] then
+			return ar
+		end
+	end
+end
+	
 return _M

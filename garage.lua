@@ -1,8 +1,10 @@
 local hero = require('hero')
+local appointmentResolver = require('appointment_resolver')
 local customerScheduler = require('customer_scheduler')
 local calendar = require('calendar')
 local customer = require('customer')
 local gameTime = require('gameTime')
+local portraitVisualizer = require ('portrait_visualizer')
 
 module ('garage', package.seeall)
 
@@ -12,16 +14,13 @@ local MAX_REPUTATION = 40000
 function _M:new()
 	local o = {}
 	
-	-- will store a history of all of the resolved appointments in the game
-	-- this could get huge...
-	o.resolvedApppointments = {}
-	
 	-- will store the currently unresolved appointments
 	o.unresolvedAppointements = {}	
 	
 	o.scheduler = customerScheduler:new(o)
 	o.hero = hero:new(o)
 	o.calendar = calendar:new(o)
+	o.apptResolver = appointmentResolver:new(o)
 	
 	o.openingHour = 7	
 	o.closingHour = 19
@@ -106,12 +105,14 @@ end
 -- draws the garage 
 function _M:draw()
 	love.graphics.print(self.worldTime:rate().name, 0, 0)
-	love.graphics.print(os.date('%B %d, %Y', self.worldTime.seconds), 0, 25)
-	love.graphics.print(os.date('%I:%M:%S %p', self.worldTime.seconds), 0, 50)
+	love.graphics.print(os.date('%B %d, %Y', self.worldTime.seconds), 0, 20)
+	love.graphics.print(os.date('%I:%M:%S %p', self.worldTime.seconds), 0, 40)
+	
+	love.graphics.print(self.reputation, 0, 60)
 	
 	local sy 
 	
-	sy = 75
+	sy = 80
 	
 	for k, apt in ipairs(self.unresolvedAppointements) do
 		if apt.customer.onPremises then
@@ -146,21 +147,19 @@ function _M:draw()
 		end
 	end
 	
+	if self.portrait then
+		self.portrait:draw()
+	end
+	
 	if self.currentApt then
 		local c = self.currentApt.customer
-		
-		--[[
-
-	
-		
-		]]
 		
 		sy = 150
 		
 		love.graphics.print(c.firstName .. ' ' .. 
 			c.lastName, 0, sy)
 		
-		local age = self.worldTime.date.year - c.birthYear
+		local age = c:age(self.worldTime)
 		love.graphics.print(age, 200, sy)
 			
 		sy = sy + 20
@@ -220,8 +219,8 @@ function _M:draw()
 			c.vehicle.kms .. ' kms', 0, sy)	
 
 		sy = sy + 20
-		for _, v in ipairs(c.vehicle.problems) do
-			love.graphics.print(v.name, 0, sy)	
+		for _, pr in ipairs(c.vehicle.problems) do
+			love.graphics.print(pr.realProblem.name, 0, sy)	
 			sy = sy + 20
 		end
 				
@@ -242,6 +241,15 @@ function _M:changeAppointment(d)
 	if self.aptIndex > #self.unresolvedAppointements then
 		self.aptIndex = #self.unresolvedAppointements
 	end
+	self:setCurrentAppointment(self.aptIndex)
+end
+
+--
+function _M:stopTalkingCustomer()
+	self.currentApt.customer.onPremises = false			
+	self.currentApt = nil
+	self.aptIndex = 1
+	self.portrait = nil
 end
 
 -- called when a key is released (event)
@@ -263,18 +271,34 @@ function _M:keyreleased(key)
 		end
 	elseif key == 'b' then
 		if self.currentApt and self.currentApt.customer.interviewed then		
-			local aptTime = gameTime:new()
+			local aptTime = gameTime:new()		
 			aptTime:setSeconds(self.worldTime.seconds + 3600)
 		
 			self.scheduler:scheduleComeBack(self.currentApt, aptTime)
-			self.currentApt.customer.onPremises = false			
-			self.currentApt = nil
-			self.aptIndex = 1
+			
+			self:stopTalkingCustomer()
+		end
+	elseif key == 'c' then
+		if self.currentApt and self.currentApt.customer.interviewed then	
+			local problems = self.currentApt.customer.vehicle.problems
+			for k, pr in ipairs(problems) do
+				pr.wasFixed = true
+			end
+			
+			self.currentApt.customer.happiness = 300
+			
+			self.apptResolver:resolveAppt(self.currentApt, appointmentResolver.PROBLEMS_FIXED)
+						
+			table.remove(self.unresolvedAppointements, self.aptIndex)	
+			
+			self:stopTalkingCustomer()
 		end
 	elseif key == 'return' then				
 		-- to do start customer interaction
 		self:setCurrentAppointment(self.aptIndex)			
-		self.worldTime:rate(3)
+		self.worldTime:rate(3)		
+		self.portrait = portraitVisualizer:new(self.currentApt.customer, self.worldTime)
+		self.portrait:position(300, 400)
 	end
 end
 

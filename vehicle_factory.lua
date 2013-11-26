@@ -1,5 +1,3 @@
-local problemFactory = require('problem_factory')
-
 module('vehicleFactory', package.seeall)
 
 local vehicleAges = {}
@@ -36,7 +34,9 @@ function initialize()
 	end
 end
 
-function newVehicle(customer, gameDate)
+function newVehicle(customer, gt)
+	local gameDate = gt.date
+	
 	local o = {}
 	
 	o.customer = customer
